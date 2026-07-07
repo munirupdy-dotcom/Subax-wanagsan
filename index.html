@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For You | 2026 Special Edition</title>
+    
+    <!-- External Assets -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #050505;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --accent: #ff3366;
+            --accent-glow: rgba(255, 51, 102, 0.3);
+            --text-main: #ffffff;
+            --text-dim: #a0a0a0;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none; /* Custom cursor implementation */
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* --- Custom Cursor --- */
+        #cursor {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: difference;
+            transition: transform 0.1s ease;
+        }
+
+        /* --- Background Animation --- */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #050505 100%);
+        }
+
+        .noise {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 100;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+        }
+
+        /* --- Layout --- */
+        section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* --- Hero Section --- */
+        .hero-text {
+            text-align: center;
+            opacity: 0;
+        }
+
+        .somali-message {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.5rem, 5vw, 2.8rem);
+            margin-bottom: 2rem;
+            line-height: 1.4;
+            background: linear-gradient(to right, #fff, #ff3366, #fff);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 5s linear infinite;
+        }
+
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
+        /* --- Bento Grid Section --- */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 250px);
+            gap: 1.5rem;
+            width: 100%;
+            opacity: 0;
+        }
+
+        .bento-item {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .bento-item:hover {
+            border-color: var(--accent);
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .large { grid-column: span 2; }
+
+        /* --- Interactive Button --- */
+        .cta-btn {
+            background: white;
+            color: black;
+            padding: 1.2rem 2.5rem;
+            border-radius: 50px;
+            font-weight: 800;
+            text-decoration: none;
+            font-size: 1.1rem;
+            margin-top: 2rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: 0.3s;
+            border: none;
+        }
+
+        .cta-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255,255,255,0.3);
+        }
+
+        /* --- Floating Elements --- */
+        .floating-icon {
+            position: absolute;
+            opacity: 0.2;
+            color: var(--accent);
+            z-index: -1;
+        }
+
+        /* --- Reveal Overlay --- */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .progress-bar {
+            width: 200px;
+            height: 2px;
+            background: #222;
+            margin-top: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            position: absolute;
+            height: 100%;
+            width: 0%;
+            background: var(--accent);
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 768px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+            }
+            .large { grid-column: span 1; }
+            .somali-message { font-size: 1.4rem; }
+            #cursor { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="cursor"></div>
+    <div class="noise"></div>
+    <div id="canvas-container"></div>
+
+    <!-- Preloader -->
+    <div id="loader">
+        <div style="font-size: 0.8rem; letter-spacing: 4px; font-weight: 300;">PREPARING YOUR SURPRISE</div>
+        <div class="progress-bar"><div class="progress-fill"></div></div>
+    </div>
+
+    <!-- Hero Section -->
+    <section id="hero">
+        <div class="container hero-text">
+            <div style="margin-bottom: 1rem; color: var(--accent); font-weight: 600; letter-spacing: 2px;">JULY 2026 EDITION</div>
+            <h1 class="somali-message">
+                Fariidaydii👑 waxan rajaynaya inad huruday hurdo u qurxon sida wajigaga👸🏻 iyo subax u cad sida dholacadyntada🫶🏻❤️😁
+            </h1>
+            <p style="color: var(--text-dim); max-width: 600px; margin: 0 auto;">
+                Every moment counts, but some moments are written in the stars. I wanted to build something as unique as your smile.
+            </p>
+            <a href="#journey" class="cta-btn">
+                Step Inside <i data-lucide="arrow-right"></i>
+            </a>
+        </div>
+    </section>
+
+    <!-- Bento Journey Section -->
+    <section id="journey">
+        <div class="container">
+            <div class="grid-container">
+                <div class="bento-item large">
+                    <i data-lucide="sparkles" style="margin-bottom: 1rem; color: var(--accent);"></i>
+                    <h3>The Vision</h3>
+                    <p style="color: var(--text-dim);">I wanted to create a space where time stops just for us. A digital sanctuary for our hangout.</p>
+                </div>
+                <div class="bento-item">
+                    <i data-lucide="heart" style="margin-bottom: 1rem; color: var(--accent);"></i>
+                    <h3>The Feeling</h3>
+                    <p style="color: var(--text-dim);">Pure comfort & joy.</p>
+                </div>
+                <div class="bento-item">
+                    <i data-lucide="map-pin" style="margin-bottom: 1rem; color: var(--accent);"></i>
+                    <h3>The Vibe</h3>
+                    <p style="color: var(--text-dim);">A perfect 2026 date.</p>
+                </div>
+                <div class="bento-item large">
+                    <i data-lucide="calendar-heart" style="margin-bottom: 1rem; color: var(--accent);"></i>
+                    <h3>Our Hangout</h3>
+                    <p style="color: var(--text-dim);">Whenever you're ready, I'm ready to make this day unforgettable. No pressure, just vibes.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final Message -->
+    <section>
+        <div class="container" style="text-align: center;">
+            <div id="final-reveal" style="opacity: 0;">
+                <h2 style="font-size: 3rem; margin-bottom: 2rem;">Shall we?</h2>
+                <button class="cta-btn" onclick="alert('Yay! Can\'t wait for our hangout! ❤️')">
+                    Yes, Let's Plan It <i data-lucide="check-circle-2"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Subtle Footer -->
+        <div style="position: absolute; bottom: 20px; font-size: 0.7rem; color: #333; letter-spacing: 1px;">
+            DESIGNED EXCLUSIVELY FOR YOU • 2026
+        </div>
+    </section>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Custom Cursor Logic
+        const cursor = document.getElementById('cursor');
+        document.addEventListener('mousemove', (e) => {
+            gsap.to(cursor, {
+                x: e.clientX,
+                y: e.clientY,
+                duration: 0.1
+            });
+        });
+
+        // Preloader Logic
+        window.addEventListener('load', () => {
+            const tl = gsap.timeline();
+            
+            tl.to(".progress-fill", {
+                width: "100%",
+                duration: 2,
+                ease: "power4.inOut"
+            })
+            .to("#loader", {
+                yPercent: -100,
+                duration: 1,
+                ease: "expo.inOut"
+            })
+            .from(".hero-text", {
+                y: 50,
+                opacity: 0,
+                duration: 1.2,
+                ease: "power4.out"
+            }, "-=0.5");
+
+            // Floating Icons Background
+            const scene = document.getElementById('hero');
+            for (let i = 0; i < 15; i++) {
+                const icon = document.createElement('div');
+                icon.className = 'floating-icon';
+                icon.innerHTML = `<i data-lucide="heart"></i>`;
+                icon.style.left = Math.random() * 100 + 'vw';
+                icon.style.top = Math.random() * 100 + 'vh';
+                scene.appendChild(icon);
+                
+                gsap.to(icon, {
+                    y: "random(-100, 100)",
+                    x: "random(-100, 100)",
+                    duration: "random(3, 6)",
+                    repeat: -1,
+                    yoyo: true,
+                    ease: "sine.inOut"
+                });
+            }
+            lucide.createIcons();
+        });
+
+        // Scroll Animations
+        gsap.registerPlugin(ScrollTrigger);
+
+        gsap.to(".grid-container", {
+            scrollTrigger: {
+                trigger: "#journey",
+                start: "top 70%",
+            },
+            opacity: 1,
+            y: 0,
+            duration: 1.5,
+            stagger: 0.2,
+            ease: "power4.out"
+        });
+
+        gsap.to("#final-reveal", {
+            scrollTrigger: {
+                trigger: "#final-reveal",
+                start: "top 80%",
+            },
+            opacity: 1,
+            scale: 1,
+            duration: 1,
+            ease: "back.out(1.7)"
+        });
+
+        // Hover effect for cursor
+        const buttons = document.querySelectorAll('.cta-btn, .bento-item');
+        buttons.forEach(btn => {
+            btn.addEventListener('mouseenter', () => {
+                gsap.to(cursor, { scale: 4, duration: 0.3 });
+            });
+            btn.addEventListener('mouseleave', () => {
+                gsap.to(cursor, { scale: 1, duration: 0.3 });
+            });
+        });
+    </script>
+</body>
+</html>
